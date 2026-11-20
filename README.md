@@ -24,10 +24,12 @@ Está diseñada para el uso diario del dueño del taller, principalmente desde d
   - Activar o desactivar.
   - Eliminar con confirmación.
 - Búsqueda de servicios.
+- Modal de configuración para exportar/importar respaldos y administrar las facturas.
 - Respaldo mediante exportación e importación de archivos JSON.
 - Persistencia local en el navegador.
 - Instalación como PWA y funcionamiento offline después de la primera carga.
 - Interfaz responsive con tarjetas optimizadas para móvil y tablas para pantallas grandes.
+- Formularios móviles desplazables y adaptados al teclado de iOS.
 
 ## Tecnologías
 
@@ -151,7 +153,8 @@ Se recomienda exportar respaldos periódicos, especialmente antes de limpiar dat
 7. Aplicar ITBIS cuando corresponda.
 8. Guardar la factura.
 9. Consultar, editar, eliminar o generar el PDF desde el listado.
-10. Exportar un respaldo periódicamente.
+10. Abrir **Configuración** desde el botón ⚙️ para exportar/importar datos o borrar facturas.
+11. Exportar un respaldo periódicamente.
 
 ## Consideraciones importantes
 
