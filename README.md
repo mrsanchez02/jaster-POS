@@ -62,11 +62,20 @@ npm run dev
 
 Vite mostrará en la terminal la URL local disponible, normalmente `http://localhost:5173`.
 
+Para probar la aplicación desde un móvil u otro dispositivo conectado a la misma red local:
+
+```bash
+npm run dev:network
+```
+
+Vite mostrará una dirección `Network`, por ejemplo `http://192.168.1.100:5173`. Abre esa dirección desde el otro dispositivo. Ambos equipos deben estar conectados a la misma red y el firewall del equipo que ejecuta Vite debe permitir conexiones entrantes al puerto utilizado.
+
 ## Scripts disponibles
 
 | Comando | Descripción |
 | --- | --- |
 | `npm run dev` | Inicia el servidor de desarrollo. |
+| `npm run dev:network` | Inicia Vite expuesto a la red local para probar desde otros dispositivos. |
 | `npm run lint` | Ejecuta ESLint sobre el proyecto. |
 | `npm run build` | Comprueba TypeScript y genera la build de producción junto con los archivos PWA. |
 | `npm run preview` | Sirve localmente la build de producción. |
