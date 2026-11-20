@@ -1,0 +1,3086 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Taller Razer - Sistema de Facturación</title>
+
+<!-- jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+
+:root {
+    --bg-color: #f3f4f6;
+    --card-bg: #ffffff;
+    --primary: #dc2626;
+    --primary-hover: #b91c1c;
+    --dark: #1f2937;
+    --text-muted: #4b5563;
+    --border: #e5e7eb;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --info: #3b82f6;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+html, body {
+    overflow-x: hidden;
+}
+
+body {
+    background: var(--bg-color);
+    color: var(--dark);
+    padding: 2rem 1rem;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1400px;
+    margin: auto;
+    background: white;
+    padding: 2rem;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.10);
+}
+
+/* =========================
+   ENCABEZADO
+========================= */
+
+header {
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+header h1 {
+    color: var(--primary);
+    font-size: clamp(1.6rem, 4vw, 2.3rem);
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+header p {
+    color: var(--text-muted);
+    margin-top: 5px;
+    font-size: clamp(.8rem, 2vw, 1rem);
+}
+
+.header-actions {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+
+.header-actions button {
+    padding: .55rem .9rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: white;
+    cursor: pointer;
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: all .2s;
+}
+
+.header-actions button:hover {
+    background: #f9fafb;
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.header-actions .btn-danger-outline:hover {
+    background: #fee2e2;
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+/* =========================
+   TABS
+========================= */
+
+.tabs {
+    display: flex;
+    gap: .3rem;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 2rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+.tab-btn {
+    padding: .8rem 1.4rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: .95rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all .2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.tab-btn:hover {
+    color: var(--primary);
+    background: #fef2f2;
+}
+
+.tab-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* =========================
+   LAYOUT
+========================= */
+
+.main-layout {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 2rem;
+}
+
+@media(max-width:1000px) {
+    .main-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media(max-width:600px) {
+    body {
+        padding: 1rem .5rem;
+    }
+
+    .container {
+        padding: 1rem;
+        border-radius: 10px;
+    }
+
+    header {
+        flex-direction: column;
+    }
+
+    .header-actions {
+        width: 100%;
+    }
+
+    .header-actions button {
+        flex: 1;
+        min-width: 120px;
+    }
+}
+
+/* =========================
+   FORMULARIO
+========================= */
+
+.form-box {
+    background: #fafafa;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+@media(max-width:600px) {
+    .form-box {
+        padding: 1rem;
+    }
+}
+
+.form-box h2 {
+    margin-bottom: 1.2rem;
+    font-size: clamp(1.1rem, 3vw, 1.4rem);
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+@media(max-width:480px) {
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: .75rem;
+    }
+}
+
+label {
+    display: block;
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: .4rem;
+}
+
+input,
+select {
+    width: 100%;
+    padding: .65rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    outline: none;
+    font-size: .9rem;
+}
+
+input:focus,
+select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(220,38,38,.1);
+}
+
+input.invalid {
+    border-color: var(--primary);
+    background: #fef2f2;
+}
+
+/* =========================
+   CATALOGO
+========================= */
+
+.services-box {
+    margin-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1.5rem;
+}
+
+.services-box h3 {
+    margin-bottom: 1rem;
+    font-size: clamp(1rem, 2.5vw, 1.1rem);
+}
+
+.service-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .5rem;
+}
+
+@media(max-width:480px) {
+    .service-buttons {
+        grid-template-columns: 1fr;
+    }
+}
+
+.service-btn {
+    padding: .65rem .5rem;
+    border: 1px solid #fecaca;
+    background: #fff1f2;
+    color: #991b1b;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: .8rem;
+    font-weight: 600;
+    transition: all .15s;
+    text-align: left;
+    word-break: break-word;
+}
+
+.service-btn:hover {
+    background: #fee2e2;
+    transform: translateY(-1px);
+}
+
+.service-btn:active {
+    transform: translateY(0);
+}
+
+.service-buttons .no-services {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 1rem;
+    color: #9ca3af;
+    font-size: .85rem;
+}
+
+/* =========================
+   SERVICIOS SELECCIONADOS
+========================= */
+
+.selected-services {
+    margin-top: 1.5rem;
+}
+
+.selected-services h3 {
+    margin-bottom: 1rem;
+    font-size: clamp(1rem, 2.5vw, 1.1rem);
+}
+
+.service-item {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: .7rem;
+    margin-bottom: .6rem;
+}
+
+.service-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+
+.service-name {
+    font-weight: 700;
+    font-size: .9rem;
+    word-break: break-word;
+}
+
+.service-price {
+    font-weight: 700;
+    color: var(--primary);
+    white-space: nowrap;
+}
+
+.service-controls {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    margin-top: .5rem;
+    flex-wrap: wrap;
+}
+
+.service-controls input {
+    width: 80px;
+    padding: .35rem;
+}
+
+.service-edit-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 150px;
+    gap: .6rem;
+    margin-top: .65rem;
+}
+
+.service-edit-group {
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+}
+
+.service-edit-label {
+    font-size: .75rem;
+    font-weight: 700;
+    color: var(--dark);
+}
+
+.service-description-input,
+.service-price-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: .45rem .5rem;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: #fff;
+    font-size: .82rem;
+}
+
+.service-description-input:focus,
+.service-price-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, .1);
+}
+
+@media (max-width: 600px) {
+    .service-edit-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.btn-remove-service {
+    background: #fee2e2;
+    color: #991b1b;
+    border: none;
+    padding: .35rem .6rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: .75rem;
+    margin-left: auto;
+}
+
+.btn-remove-service:hover {
+    background: #fecaca;
+}
+
+/* =========================
+   CHECKBOX ITBIS
+========================= */
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    margin-top: 1rem;
+    padding: .75rem;
+    background: #f9fafb;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    transition: background .2s;
+}
+
+.checkbox-group:hover {
+    background: #f3f4f6;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--primary);
+    flex-shrink: 0;
+}
+
+.checkbox-group label {
+    margin: 0;
+    cursor: pointer;
+    font-size: .9rem;
+    font-weight: 600;
+    color: var(--dark);
+    user-select: none;
+}
+
+/* =========================
+   TOTALES
+========================= */
+
+.total-preview {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    padding: 1rem;
+    border-radius: 7px;
+    margin-top: 1rem;
+}
+
+.total-line {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: .4rem;
+    gap: .5rem;
+}
+
+.total-final {
+    border-top: 1px solid #fecaca;
+    padding-top: .6rem;
+    margin-top: .6rem;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--primary);
+}
+
+/* =========================
+   BOTONES
+========================= */
+
+.btn-container {
+    display: flex;
+    gap: .5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+button {
+    font-weight: 700;
+}
+
+.btn-submit {
+    flex: 1;
+    background: var(--primary);
+    color: white;
+    padding: .8rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: background .2s;
+    min-width: 140px;
+}
+
+.btn-submit:hover {
+    background: var(--primary-hover);
+}
+
+.btn-cancel {
+    background: #e5e7eb;
+    padding: .8rem 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-cancel:hover {
+    background: #d1d5db;
+}
+
+/* =========================
+   TABLA
+========================= */
+
+.table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
+.table-header h2 {
+    margin: 0;
+    font-size: clamp(1.1rem, 3vw, 1.4rem);
+}
+
+.table-header .search-box {
+    padding: .5rem .8rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: .85rem;
+    min-width: 220px;
+    outline: none;
+    flex: 1;
+    max-width: 320px;
+}
+
+@media(max-width:480px) {
+    .table-header .search-box {
+        min-width: 0;
+        width: 100%;
+        max-width: 100%;
+    }
+}
+
+.table-header .search-box:focus {
+    border-color: var(--primary);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .88rem;
+}
+
+thead {
+    background: var(--dark);
+    color: white;
+}
+
+th,
+td {
+    padding: .8rem;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+}
+
+tr:hover {
+    background: #f9fafb;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-center {
+    text-align: center;
+}
+
+/* Tabla responsive tipo tarjeta en móvil */
+@media(max-width:768px) {
+    table,
+    thead,
+    tbody,
+    th,
+    td,
+    tr {
+        display: block;
+    }
+
+    thead {
+        display: none;
+    }
+
+    tr {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        margin-bottom: .75rem;
+        padding: .5rem;
+    }
+
+    tr:hover {
+        background: #fff;
+    }
+
+    td {
+        border: none;
+        padding: .4rem .5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: .75rem;
+        text-align: right;
+    }
+
+    td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        color: var(--text-muted);
+        text-align: left;
+        flex-shrink: 0;
+        font-size: .8rem;
+    }
+
+    td:last-child {
+        justify-content: flex-end;
+        padding-top: .6rem;
+        border-top: 1px solid var(--border);
+    }
+
+    td:last-child::before {
+        display: none;
+    }
+
+    .empty-row {
+        text-align: center;
+        justify-content: center;
+    }
+}
+
+/* =========================
+   ACCIONES
+========================= */
+
+.actions-cell {
+    display: flex;
+    gap: .3rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-action {
+    padding: .4rem .65rem;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: .75rem;
+    transition: opacity .15s;
+}
+
+.btn-action:hover {
+    opacity: .85;
+}
+
+.btn-edit {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.btn-delete {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.btn-pdf {
+    background: var(--success);
+    color: white;
+}
+
+.empty-row {
+    text-align: center;
+    padding: 2rem;
+    color: #9ca3af;
+}
+
+/* =========================
+   BADGE ESTADO
+========================= */
+
+.badge {
+    display: inline-block;
+    padding: .2rem .55rem;
+    border-radius: 999px;
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+.badge-active {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.badge-inactive {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* =========================
+   MODAL
+========================= */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+.modal {
+    background: white;
+    border-radius: 12px;
+    padding: 1.8rem;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 20px 50px rgba(0,0,0,.25);
+    animation: modalIn .2s ease-out;
+}
+
+@media(max-width:480px) {
+    .modal {
+        padding: 1.2rem;
+    }
+}
+
+@keyframes modalIn {
+    from { opacity: 0; transform: scale(.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.modal h3 {
+    margin-bottom: .8rem;
+    color: var(--dark);
+}
+
+.modal p {
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+    white-space: pre-line;
+}
+
+.modal-actions {
+    display: flex;
+    gap: .5rem;
+    justify-content: flex-end;
+}
+
+.modal-actions button {
+    padding: .6rem 1.2rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: .9rem;
+}
+
+.modal-btn-cancel {
+    background: #e5e7eb;
+    color: var(--dark);
+}
+
+.modal-btn-cancel:hover {
+    background: #d1d5db;
+}
+
+.modal-btn-confirm {
+    background: var(--primary);
+    color: white;
+}
+
+.modal-btn-confirm:hover {
+    background: var(--primary-hover);
+}
+
+/* =========================
+   TOAST
+========================= */
+
+.toast-container {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    z-index: 2000;
+    max-width: calc(100vw - 2rem);
+}
+
+@media(max-width:480px) {
+    .toast-container {
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+        align-items: stretch;
+    }
+}
+
+.toast {
+    padding: .9rem 1.2rem;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    font-size: .9rem;
+    box-shadow: 0 8px 20px rgba(0,0,0,.2);
+    animation: toastIn .3s ease-out;
+    min-width: 250px;
+}
+
+.toast.success { background: var(--success); }
+.toast.error { background: var(--primary); }
+.toast.info { background: var(--info); }
+
+@keyframes toastIn {
+    from { opacity: 0; transform: translateX(100%); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.toast.removing {
+    animation: toastOut .3s ease-in forwards;
+}
+
+@keyframes toastOut {
+    to { opacity: 0; transform: translateX(100%); }
+}
+
+/* =========================
+   MODULO SERVICIOS (extras)
+========================= */
+
+.services-layout {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 2rem;
+}
+
+@media(max-width:1000px) {
+    .services-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.services-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.summary-card {
+    background: #f9fafb;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .9rem 1rem;
+}
+
+.summary-card .label {
+    font-size: .75rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+.summary-card .value {
+    font-size: clamp(1.1rem, 3vw, 1.4rem);
+    font-weight: 800;
+    color: var(--dark);
+    margin-top: .25rem;
+}
+
+.summary-card .value.primary {
+    color: var(--primary);
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+
+<div>
+    <h1>TALLER RAZER</h1>
+    <p>Sistema de Control de Vehículos y Facturación</p>
+</div>
+
+<div class="header-actions">
+    <button type="button" id="btn-export" title="Exportar datos a JSON">
+        ⬇️ Exportar JSON
+    </button>
+    <button type="button" id="btn-import" title="Importar datos desde JSON">
+        ⬆️ Importar JSON
+    </button>
+    <input type="file" id="file-import" accept=".json" style="display:none">
+    <button type="button" id="btn-clear-all" class="btn-danger-outline" title="Eliminar todas las facturas">
+        🗑️ Borrar Facturas
+    </button>
+</div>
+
+</header>
+
+
+<!-- =====================================================
+     TABS
+===================================================== -->
+
+<div class="tabs">
+    <button type="button" class="tab-btn active" data-tab="facturacion">
+        🧾 Facturación
+    </button>
+    <button type="button" class="tab-btn" data-tab="servicios">
+        🛠️ Servicios
+    </button>
+</div>
+
+
+<!-- =====================================================
+     TAB: FACTURACIÓN
+===================================================== -->
+
+<div class="tab-content active" id="tab-facturacion">
+
+<div class="main-layout">
+
+
+<!-- =====================================================
+     FORMULARIO
+===================================================== -->
+
+<div class="form-box">
+
+<h2 id="form-title">
+Registrar Vehículo / Servicio
+</h2>
+
+<form id="crud-form">
+
+<input type="hidden" id="record-id">
+
+
+<div class="form-group">
+
+<label for="client-name">
+Nombre del Cliente
+</label>
+
+<input
+type="text"
+id="client-name"
+required
+>
+
+</div>
+
+
+<div class="form-group">
+
+<label for="vehicle-model">
+Modelo del Vehículo
+</label>
+
+<input
+type="text"
+id="vehicle-model"
+placeholder="Ej: Toyota Hilux"
+required
+>
+
+</div>
+
+
+<div class="form-row">
+
+<div class="form-group">
+
+<label for="plate-number">
+Número de Placa
+</label>
+
+<input
+type="text"
+id="plate-number"
+maxlength="10"
+required
+>
+
+</div>
+
+
+<div class="form-group">
+
+<label for="vehicle-year">
+Año
+</label>
+
+<input
+type="number"
+id="vehicle-year"
+min="1900"
+required
+>
+
+</div>
+
+</div>
+
+
+<div class="form-group">
+
+<label for="client-phone">
+Teléfono
+</label>
+
+<input
+type="tel"
+id="client-phone"
+required
+>
+
+</div>
+
+
+<!-- =====================================================
+     CATALOGO DE SERVICIOS
+===================================================== -->
+
+<div class="services-box">
+
+<h3>
+🛠️ Seleccionar Servicios
+</h3>
+
+<div
+class="service-buttons"
+id="service-buttons"
+>
+</div>
+
+</div>
+
+
+<!-- =====================================================
+     SERVICIOS AGREGADOS
+===================================================== -->
+
+<div class="selected-services">
+
+<h3>
+📋 Servicios de la factura
+</h3>
+
+<div id="selected-services-list">
+
+<p style="color:#9ca3af;font-size:.85rem;">
+No hay servicios agregados.
+</p>
+
+</div>
+
+</div>
+
+
+<!-- =====================================================
+     ITBIS
+===================================================== -->
+
+<div class="checkbox-group">
+
+<input
+type="checkbox"
+id="apply-tax"
+>
+
+<label for="apply-tax">
+Aplicar 18% de ITBIS
+</label>
+
+</div>
+
+
+<!-- =====================================================
+     TOTALES
+===================================================== -->
+
+<div class="total-preview">
+
+<div class="total-line">
+
+<span>
+Subtotal:
+</span>
+
+<strong id="preview-subtotal">
+$0.00
+</strong>
+
+</div>
+
+
+<div class="total-line">
+
+<span>
+ITBIS:
+</span>
+
+<strong id="preview-tax">
+$0.00
+</strong>
+
+</div>
+
+
+<div class="total-line total-final">
+
+<span>
+TOTAL:
+</span>
+
+<strong id="preview-total">
+$0.00
+</strong>
+
+</div>
+
+</div>
+
+
+<div class="btn-container">
+
+<button
+type="submit"
+class="btn-submit"
+id="btn-submit"
+>
+Guardar Factura
+</button>
+
+
+<button
+type="button"
+class="btn-cancel"
+id="btn-cancel"
+style="display:none"
+>
+Cancelar
+</button>
+
+</div>
+
+</form>
+
+</div>
+
+
+<!-- =====================================================
+     TABLA DE FACTURAS
+===================================================== -->
+
+<div class="table-container">
+
+<div class="table-header">
+
+<h2>
+Facturas Registradas
+</h2>
+
+<input
+type="text"
+class="search-box"
+id="search-box"
+placeholder="🔍 Buscar por cliente, placa o factura..."
+>
+
+</div>
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Factura</th>
+<th>Cliente</th>
+<th>Vehículo</th>
+<th>Placa</th>
+<th>Servicios</th>
+<th>Fecha</th>
+<th>Total</th>
+<th>Acciones</th>
+
+</tr>
+
+</thead>
+
+
+<tbody id="data-table-body">
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- =====================================================
+     TAB: SERVICIOS
+===================================================== -->
+
+<div class="tab-content" id="tab-servicios">
+
+<div class="services-summary">
+
+<div class="summary-card">
+    <div class="label">Total de servicios</div>
+    <div class="value" id="summary-total">0</div>
+</div>
+
+<div class="summary-card">
+    <div class="label">Activos</div>
+    <div class="value" id="summary-active">0</div>
+</div>
+
+<div class="summary-card">
+    <div class="label">Inactivos</div>
+    <div class="value" id="summary-inactive">0</div>
+</div>
+
+<div class="summary-card">
+    <div class="label">Precio promedio</div>
+    <div class="value primary" id="summary-avg">$0.00</div>
+</div>
+
+</div>
+
+
+<div class="services-layout">
+
+
+<!-- =====================================================
+     FORMULARIO DE SERVICIO
+===================================================== -->
+
+<div class="form-box">
+
+<h2 id="service-form-title">
+Agregar Nuevo Servicio
+</h2>
+
+<form id="service-form">
+
+<input type="hidden" id="service-id">
+
+
+<div class="form-group">
+
+<label for="service-name">
+Nombre del Servicio
+</label>
+
+<input
+type="text"
+id="service-name"
+placeholder="Ej: Cambio de aceite"
+required
+>
+
+</div>
+
+
+<div class="form-group">
+
+<label for="service-price">
+Precio (DOP)
+</label>
+
+<input
+type="number"
+id="service-price"
+min="0"
+step="0.01"
+placeholder="0.00"
+required
+>
+
+</div>
+
+
+<div class="form-group">
+
+<label for="service-description">
+Descripción (opcional)
+</label>
+
+<input
+type="text"
+id="service-description"
+placeholder="Breve descripción"
+>
+
+</div>
+
+
+<div class="checkbox-group">
+
+<input
+type="checkbox"
+id="service-active"
+checked
+>
+
+<label for="service-active">
+Servicio activo (visible en facturación)
+</label>
+
+</div>
+
+
+<div class="btn-container">
+
+<button
+type="submit"
+class="btn-submit"
+id="btn-service-submit"
+>
+Agregar Servicio
+</button>
+
+
+<button
+type="button"
+class="btn-cancel"
+id="btn-service-cancel"
+style="display:none"
+>
+Cancelar
+</button>
+
+</div>
+</form>
+
+</div>
+
+
+<!-- =====================================================
+     TABLA DE SERVICIOS
+===================================================== -->
+
+<div class="table-container">
+
+<div class="table-header">
+
+<h2>
+Catálogo de Servicios
+</h2>
+
+<input
+type="text"
+class="search-box"
+id="service-search-box"
+placeholder="🔍 Buscar servicio..."
+>
+
+</div>
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Servicio</th>
+<th>Descripción</th>
+<th>Precio</th>
+<th>Estado</th>
+<th>Acciones</th>
+
+</tr>
+
+</thead>
+
+
+<tbody id="services-table-body">
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- =====================================================
+     MODAL DE CONFIRMACIÓN
+===================================================== -->
+
+<div class="modal-overlay" id="modal-overlay">
+
+<div class="modal">
+
+<h3 id="modal-title">
+Confirmar acción
+</h3>
+
+<p id="modal-message">
+¿Estás seguro?
+</p>
+
+<div class="modal-actions">
+
+<button
+type="button"
+class="modal-btn-cancel"
+id="modal-cancel"
+>
+Cancelar
+</button>
+
+<button
+type="button"
+class="modal-btn-confirm"
+id="modal-confirm"
+>
+Confirmar
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- =====================================================
+     TOASTS
+===================================================== -->
+
+<div class="toast-container" id="toast-container"></div>
+
+
+<script>
+
+/* =====================================================
+   CONFIGURACIÓN
+===================================================== */
+
+const TAX_RATE = 0.18;
+const STORAGE_KEY = "taller_razer_db";
+const COUNTER_KEY = "taller_razer_counter";
+const SERVICES_KEY = "taller_razer_services";
+
+
+/* =====================================================
+   CATÁLOGO POR DEFECTO (solo se usa la primera vez)
+===================================================== */
+
+const defaultServiceCatalog = [
+
+{ name: "Cambio de aceite", price: 45, description: "Incluye aceite y filtro", active: true },
+{ name: "Cambio de frenos", price: 120, description: "Pastillas y revisión", active: true },
+{ name: "Alineación", price: 50, description: "Alineación computarizada", active: true },
+{ name: "Balanceo", price: 40, description: "Balanceo de 4 ruedas", active: true },
+{ name: "Cambio de batería", price: 150, description: "Batería nueva instalada", active: true },
+{ name: "Diagnóstico", price: 35, description: "Escaneo computarizado", active: true },
+{ name: "Mantenimiento general", price: 200, description: "Revisión completa", active: true },
+{ name: "Lavado completo", price: 30, description: "Lavado interior y exterior", active: true },
+{ name: "Cambio de bujías", price: 80, description: "Bujías nuevas", active: true },
+{ name: "Cambio de filtro", price: 35, description: "Filtro de aire o combustible", active: true },
+{ name: "Revisión de aire acondicionado", price: 60, description: "Carga de gas y revisión", active: true },
+{ name: "Reparación de suspensión", price: 180, description: "Amortiguadores y resortes", active: true }
+
+];
+
+
+/* =====================================================
+   UTILIDADES
+===================================================== */
+
+function round2(n) {
+    return Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+}
+
+function safeNumber(n, fallback = 0) {
+    const v = Number(n);
+    return isFinite(v) ? v : fallback;
+}
+
+
+/* =====================================================
+   ESTADO GLOBAL
+===================================================== */
+
+let serviceCatalog =
+JSON.parse(localStorage.getItem(SERVICES_KEY));
+
+if (!Array.isArray(serviceCatalog) || serviceCatalog.length === 0) {
+    // Primera vez: cargar catálogo por defecto
+    serviceCatalog =
+    defaultServiceCatalog.map((s, i) => ({
+        id: "SRV-" + String(i + 1).padStart(4, "0"),
+        name: s.name,
+        price: s.price,
+        description: s.description,
+        active: s.active
+    }));
+    localStorage.setItem(SERVICES_KEY, JSON.stringify(serviceCatalog));
+}
+
+
+let dbRecords =
+JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+if (!Array.isArray(dbRecords)) dbRecords = [];
+
+
+let selectedServices = [];
+
+let currentSearchTerm = "";
+
+let currentServiceSearchTerm = "";
+
+
+/* =====================================================
+   ELEMENTOS - FACTURACIÓN
+===================================================== */
+
+const form = document.getElementById("crud-form");
+const recordId = document.getElementById("record-id");
+const clientName = document.getElementById("client-name");
+const vehicleModel = document.getElementById("vehicle-model");
+const plateNumber = document.getElementById("plate-number");
+const vehicleYear = document.getElementById("vehicle-year");
+const clientPhone = document.getElementById("client-phone");
+const applyTax = document.getElementById("apply-tax");
+const selectedServicesList = document.getElementById("selected-services-list");
+const serviceButtons = document.getElementById("service-buttons");
+const tableBody = document.getElementById("data-table-body");
+const btnSubmit = document.getElementById("btn-submit");
+const btnCancel = document.getElementById("btn-cancel");
+const searchBox = document.getElementById("search-box");
+
+
+/* =====================================================
+   ELEMENTOS - SERVICIOS
+===================================================== */
+
+const serviceForm = document.getElementById("service-form");
+const serviceId = document.getElementById("service-id");
+const serviceName = document.getElementById("service-name");
+const servicePrice = document.getElementById("service-price");
+const serviceDescription = document.getElementById("service-description");
+const serviceActive = document.getElementById("service-active");
+const servicesTableBody = document.getElementById("services-table-body");
+const btnServiceSubmit = document.getElementById("btn-service-submit");
+const btnServiceCancel = document.getElementById("btn-service-cancel");
+const serviceSearchBox = document.getElementById("service-search-box");
+const serviceFormTitle = document.getElementById("service-form-title");
+
+
+/* =====================================================
+   ELEMENTOS - GENERALES
+===================================================== */
+
+const modalOverlay = document.getElementById("modal-overlay");
+const modalTitle = document.getElementById("modal-title");
+const modalMessage = document.getElementById("modal-message");
+const modalCancel = document.getElementById("modal-cancel");
+const modalConfirm = document.getElementById("modal-confirm");
+const toastContainer = document.getElementById("toast-container");
+
+
+/* =====================================================
+   INICIALIZACIÓN DINÁMICA DEL AÑO
+===================================================== */
+
+vehicleYear.max = new Date().getFullYear() + 1;
+
+
+/* =====================================================
+   MONEDA
+===================================================== */
+
+function formatMoney(amount) {
+    return new Intl.NumberFormat(
+        "es-DO",
+        {
+            style: "currency",
+            currency: "DOP",
+            minimumFractionDigits: 2
+        }
+    ).format(safeNumber(amount));
+}
+
+
+/* =====================================================
+   TOASTS
+===================================================== */
+
+function showToast(message, type = "success") {
+
+    const toast = document.createElement("div");
+    toast.className = "toast " + type;
+    toast.textContent = message;
+
+    toastContainer.appendChild(toast);
+
+    setTimeout(() => {
+        toast.classList.add("removing");
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+
+/* =====================================================
+   MODAL DE CONFIRMACIÓN
+===================================================== */
+
+function showConfirm(title, message) {
+
+    return new Promise((resolve) => {
+
+        modalTitle.textContent = title;
+        modalMessage.textContent = message;
+        modalOverlay.classList.add("active");
+
+        function cleanup(result) {
+            modalOverlay.classList.remove("active");
+            modalConfirm.removeEventListener("click", onConfirm);
+            modalCancel.removeEventListener("click", onCancel);
+            resolve(result);
+        }
+
+        function onConfirm() { cleanup(true); }
+        function onCancel() { cleanup(false); }
+
+        modalConfirm.addEventListener("click", onConfirm);
+        modalCancel.addEventListener("click", onCancel);
+    });
+}
+
+
+/* =====================================================
+   TABS
+===================================================== */
+
+document.querySelectorAll(".tab-btn").forEach(btn => {
+
+    btn.addEventListener("click", () => {
+
+        const target = btn.dataset.tab;
+
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+
+        btn.classList.add("active");
+        document.getElementById("tab-" + target).classList.add("active");
+    });
+});
+
+
+/* =====================================================
+   GUARDAR SERVICIOS EN STORAGE
+===================================================== */
+
+function saveServices() {
+    localStorage.setItem(SERVICES_KEY, JSON.stringify(serviceCatalog));
+}
+
+
+/* =====================================================
+   GENERAR ID DE SERVICIO (evita colisiones)
+===================================================== */
+
+function generateServiceId() {
+
+    const used = new Set();
+
+    serviceCatalog.forEach(s => {
+        const match = /^SRV-(\d+)$/.exec(s.id || "");
+        if (match) {
+            used.add(parseInt(match[1], 10));
+        }
+    });
+
+    let n = 1;
+    while (used.has(n)) n++;
+
+    return "SRV-" + String(n).padStart(4, "0");
+}
+
+
+/* =====================================================
+   CREAR BOTONES DEL CATÁLOGO (FACTURACIÓN)
+===================================================== */
+
+function renderServiceButtons() {
+
+    serviceButtons.innerHTML = "";
+
+    const activeServices = serviceCatalog.filter(s => s.active !== false);
+
+    if (activeServices.length === 0) {
+
+        serviceButtons.innerHTML =
+        `<div class="no-services">
+        No hay servicios activos. Agrégalos en la pestaña "Servicios".
+        </div>`;
+
+        return;
+    }
+
+    activeServices.forEach(service => {
+
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "service-btn";
+        button.textContent = service.name + " - " + formatMoney(service.price);
+        button.dataset.id = service.id;
+        button.setAttribute("aria-label", "Agregar servicio " + service.name);
+
+        serviceButtons.appendChild(button);
+    });
+}
+
+/* Delegación de eventos para el catálogo */
+
+serviceButtons.addEventListener("click", (event) => {
+
+    const button = event.target.closest(".service-btn");
+    if (!button) return;
+
+    const id = button.dataset.id;
+    if (id) addServiceById(id);
+});
+
+
+/* =====================================================
+   AGREGAR SERVICIO POR ID
+===================================================== */
+
+function addServiceById(id) {
+
+    const service = serviceCatalog.find(s => s.id === id);
+    if (!service) return;
+
+    const existing = selectedServices.find(item => item.serviceId === id);
+
+    if (existing) {
+        existing.quantity++;
+    } else {
+        selectedServices.push({
+            serviceId: service.id,
+            name: service.name,
+            description: service.description || "",
+            price: safeNumber(service.price),
+            quantity: 1
+        });
+    }
+
+    renderSelectedServices();
+    calculateTotals();
+}
+
+
+/* =====================================================
+   MOSTRAR SERVICIOS SELECCIONADOS
+===================================================== */
+
+function renderSelectedServices() {
+
+    selectedServicesList.innerHTML = "";
+
+    if (selectedServices.length === 0) {
+        selectedServicesList.innerHTML =
+        `<p style="color:#9ca3af;font-size:.85rem;">
+        No hay servicios agregados.
+        </p>`;
+        return;
+    }
+
+    selectedServices.forEach((service, index) => {
+
+        const item = document.createElement("div");
+        item.className = "service-item";
+
+        const header = document.createElement("div");
+        header.className = "service-item-header";
+
+        const name = document.createElement("span");
+        name.className = "service-name";
+        name.textContent = service.name;
+
+        const priceTotal = document.createElement("span");
+        priceTotal.className = "service-price";
+        priceTotal.textContent = formatMoney(service.price * service.quantity);
+
+        header.appendChild(name);
+        header.appendChild(priceTotal);
+
+        const editGrid = document.createElement("div");
+        editGrid.className = "service-edit-grid";
+
+        const descriptionGroup = document.createElement("div");
+        descriptionGroup.className = "service-edit-group";
+
+        const descriptionLabel = document.createElement("label");
+        descriptionLabel.textContent = "Descripción:";
+        descriptionLabel.className = "service-edit-label";
+
+        const description = document.createElement("input");
+        description.type = "text";
+        description.className = "service-description-input";
+        description.value = service.description || "";
+        description.placeholder = "Descripción para esta factura";
+
+        description.addEventListener("input", function () {
+            service.description = this.value;
+        });
+
+        descriptionGroup.appendChild(descriptionLabel);
+        descriptionGroup.appendChild(description);
+
+        const priceGroup = document.createElement("div");
+        priceGroup.className = "service-edit-group";
+
+        const priceLabel = document.createElement("label");
+        priceLabel.textContent = "Precio:";
+        priceLabel.className = "service-edit-label";
+
+        const priceInput = document.createElement("input");
+        priceInput.type = "number";
+        priceInput.min = 0;
+        priceInput.step = "0.01";
+        priceInput.className = "service-price-input";
+        priceInput.value = service.price;
+
+        priceInput.addEventListener("change", function () {
+            let value = parseFloat(this.value);
+            if (isNaN(value) || value < 0) value = 0;
+
+            service.price = value;
+            this.value = value;
+
+            renderSelectedServices();
+            calculateTotals();
+        });
+
+        priceGroup.appendChild(priceLabel);
+        priceGroup.appendChild(priceInput);
+
+        editGrid.appendChild(descriptionGroup);
+        editGrid.appendChild(priceGroup);
+
+        const controls = document.createElement("div");
+        controls.className = "service-controls";
+
+        const quantityLabel = document.createElement("span");
+        quantityLabel.textContent = "Cantidad:";
+
+        const quantity = document.createElement("input");
+        quantity.type = "number";
+        quantity.min = 1;
+        quantity.value = service.quantity;
+
+        quantity.addEventListener("change", function () {
+            let value = parseInt(this.value, 10);
+            if (isNaN(value) || value < 1) value = 1;
+            service.quantity = value;
+            renderSelectedServices();
+            calculateTotals();
+        });
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "btn-remove-service";
+        remove.textContent = "Eliminar";
+
+        remove.addEventListener("click", function () {
+            selectedServices.splice(index, 1);
+            renderSelectedServices();
+            calculateTotals();
+        });
+
+        controls.appendChild(quantityLabel);
+        controls.appendChild(quantity);
+        controls.appendChild(remove);
+
+        item.appendChild(header);
+        item.appendChild(editGrid);
+        item.appendChild(controls);
+
+        selectedServicesList.appendChild(item);
+    });
+}
+
+
+function calculateTotals() {
+
+    let subtotal = 0;
+
+    selectedServices.forEach(service => {
+        subtotal += safeNumber(service.price) * safeNumber(service.quantity, 1);
+    });
+
+    subtotal = round2(subtotal);
+
+    let tax = 0;
+    if (applyTax.checked) tax = round2(subtotal * TAX_RATE);
+
+    const total = round2(subtotal + tax);
+
+    document.getElementById("preview-subtotal").textContent = formatMoney(subtotal);
+    document.getElementById("preview-tax").textContent = formatMoney(tax);
+    document.getElementById("preview-total").textContent = formatMoney(total);
+
+    return { subtotal, tax, total };
+}
+
+applyTax.addEventListener("change", calculateTotals);
+
+
+/* =====================================================
+   GUARDAR BASE DE DATOS (FACTURAS)
+===================================================== */
+
+function saveDatabase() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dbRecords));
+}
+
+
+/* =====================================================
+   NÚMERO DE FACTURA
+===================================================== */
+
+function generateInvoiceNumber() {
+
+    let counter = parseInt(localStorage.getItem(COUNTER_KEY), 10) || 0;
+    counter++;
+    localStorage.setItem(COUNTER_KEY, counter);
+
+    return "TR-" + String(counter).padStart(6, "0");
+}
+
+
+/* =====================================================
+   FECHA Y HORA
+===================================================== */
+
+function getDateTime() {
+
+    const now = new Date();
+
+    return {
+        date: now.toLocaleDateString("es-DO"),
+        time: now.toLocaleTimeString("es-DO", { hour: "2-digit", minute: "2-digit" })
+    };
+}
+
+
+/* =====================================================
+   VALIDACIÓN LIGERA DE CAMPOS
+===================================================== */
+
+function validateInvoiceFields() {
+
+    let ok = true;
+
+    // Placa: al menos 3 caracteres alfanuméricos
+    const plate = plateNumber.value.trim();
+    if (plate.length < 3) {
+        plateNumber.classList.add("invalid");
+        ok = false;
+    } else {
+        plateNumber.classList.remove("invalid");
+    }
+
+    // Teléfono: al menos 7 dígitos
+    const phoneDigits = clientPhone.value.replace(/\D/g, "");
+    if (phoneDigits.length < 7) {
+        clientPhone.classList.add("invalid");
+        ok = false;
+    } else {
+        clientPhone.classList.remove("invalid");
+    }
+
+    return ok;
+}
+
+
+/* =====================================================
+   GUARDAR FACTURA
+===================================================== */
+
+form.addEventListener("submit", function (event) {
+
+    event.preventDefault();
+
+    if (selectedServices.length === 0) {
+        showToast("Debes agregar al menos un servicio.", "error");
+        return;
+    }
+
+    if (!validateInvoiceFields()) {
+        showToast("Revisa la placa y el teléfono.", "error");
+        return;
+    }
+
+    const totals = calculateTotals();
+    const isEditing = !!recordId.value;
+    let invoiceNumber = recordId.value;
+    let dateTime;
+
+    if (isEditing) {
+        const original = dbRecords.find(item => item.id === recordId.value);
+        dateTime = original
+            ? { date: original.date, time: original.time }
+            : getDateTime();
+    } else {
+        invoiceNumber = generateInvoiceNumber();
+        dateTime = getDateTime();
+    }
+
+    const record = {
+        id: invoiceNumber,
+        clientName: clientName.value.trim(),
+        vehicleModel: vehicleModel.value.trim(),
+        plateNumber: plateNumber.value.trim().toUpperCase(),
+        vehicleYear: vehicleYear.value,
+        clientPhone: clientPhone.value.trim(),
+        services: JSON.parse(JSON.stringify(selectedServices)),
+        subtotal: totals.subtotal,
+        tax: totals.tax,
+        total: totals.total,
+        applyTax: applyTax.checked,
+        date: dateTime.date,
+        time: dateTime.time
+    };
+
+    if (isEditing) {
+        const index = dbRecords.findIndex(item => item.id === recordId.value);
+        if (index !== -1) dbRecords[index] = record;
+        showToast("Factura actualizada correctamente.", "success");
+    } else {
+        dbRecords.push(record);
+        showToast("Factura guardada correctamente.", "success");
+    }
+
+    saveDatabase();
+    renderTable();
+    resetForm();
+});
+
+
+/* =====================================================
+   FILTRAR FACTURAS
+===================================================== */
+
+function getFilteredRecords() {
+
+    if (!currentSearchTerm) return dbRecords;
+
+    const term = currentSearchTerm.toLowerCase();
+
+    return dbRecords.filter(record => {
+        return (
+            record.id.toLowerCase().includes(term) ||
+            record.clientName.toLowerCase().includes(term) ||
+            record.plateNumber.toLowerCase().includes(term) ||
+            record.vehicleModel.toLowerCase().includes(term)
+        );
+    });
+}
+
+searchBox.addEventListener("input", function () {
+    currentSearchTerm = this.value.trim();
+    renderTable();
+});
+
+
+/* =====================================================
+   MOSTRAR TABLA DE FACTURAS
+===================================================== */
+
+function renderTable() {
+
+    tableBody.innerHTML = "";
+
+    const records = getFilteredRecords();
+
+    if (records.length === 0) {
+
+        const row = document.createElement("tr");
+        row.innerHTML =
+        `<td colspan="8" class="empty-row">
+        ${currentSearchTerm ? "No se encontraron coincidencias." : "No hay facturas registradas."}
+        </td>`;
+
+        tableBody.appendChild(row);
+        return;
+    }
+
+    records.forEach(record => {
+
+        const row = document.createElement("tr");
+        const serviceCount = record.services ? record.services.length : 0;
+
+        row.innerHTML = `
+
+        <td data-label="Factura"><strong>${escapeHTML(record.id)}</strong></td>
+
+        <td data-label="Cliente">${escapeHTML(record.clientName)}</td>
+
+        <td data-label="Vehículo">${escapeHTML(record.vehicleModel)}</td>
+
+        <td data-label="Placa">${escapeHTML(record.plateNumber)}</td>
+
+        <td data-label="Servicios">${serviceCount} servicio(s)</td>
+
+        <td data-label="Fecha">
+            ${escapeHTML(record.date)}
+            <br>
+            <small>${escapeHTML(record.time)}</small>
+        </td>
+
+        <td data-label="Total" class="text-right">
+            <strong>${formatMoney(record.total)}</strong>
+        </td>
+
+        <td data-label="Acciones">
+            <div class="actions-cell">
+                <button class="btn-action btn-edit" data-action="edit" data-id="${escapeHTML(record.id)}">
+                    Editar
+                </button>
+                <button class="btn-action btn-delete" data-action="delete" data-id="${escapeHTML(record.id)}">
+                    Eliminar
+                </button>
+                <button class="btn-action btn-pdf" data-action="pdf" data-id="${escapeHTML(record.id)}">
+                    📄 PDF
+                </button>
+            </div>
+        </td>
+
+        `;
+
+        tableBody.appendChild(row);
+    });
+}
+
+tableBody.addEventListener("click", function (event) {
+
+    const button = event.target.closest("[data-action]");
+    if (!button) return;
+
+    const action = button.dataset.action;
+    const id = button.dataset.id;
+
+    if (action === "edit") editRecord(id);
+    else if (action === "delete") deleteRecord(id);
+    else if (action === "pdf") generatePDF(id);
+});
+
+
+/* =====================================================
+   SEGURIDAD HTML
+===================================================== */
+
+function escapeHTML(text) {
+
+    return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+
+/* =====================================================
+   EDITAR FACTURA
+===================================================== */
+
+function editRecord(id) {
+
+    const record = dbRecords.find(item => item.id === id);
+    if (!record) return;
+
+    recordId.value = record.id;
+    clientName.value = record.clientName;
+    vehicleModel.value = record.vehicleModel;
+    plateNumber.value = record.plateNumber;
+    vehicleYear.value = record.vehicleYear;
+    clientPhone.value = record.clientPhone;
+
+    // Restaurar servicios conservando serviceId cuando exista
+    selectedServices = (record.services || []).map(s => {
+        let sid = s.serviceId || null;
+
+        // Si no hay serviceId, buscar por nombre (compatibilidad)
+        if (!sid) {
+            const found = serviceCatalog.find(c => c.name === s.name);
+            sid = found ? found.id : null;
+        }
+
+        return {
+            serviceId: sid,
+            name: s.name,
+            description: s.description || "",
+            price: safeNumber(s.price),
+            quantity: safeNumber(s.quantity, 1)
+        };
+    });
+
+    applyTax.checked = !!record.applyTax;
+
+    document.getElementById("form-title").textContent =
+        "Editar Factura " + record.id;
+
+    btnSubmit.textContent = "Actualizar Factura";
+    btnCancel.style.display = "block";
+
+    renderSelectedServices();
+    calculateTotals();
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+
+/* =====================================================
+   ELIMINAR FACTURA
+===================================================== */
+
+async function deleteRecord(id) {
+
+    const record = dbRecords.find(item => item.id === id);
+    if (!record) return;
+
+    const confirmed = await showConfirm(
+        "Eliminar factura",
+        `¿Deseas eliminar la factura ${record.id} de ${record.clientName}? Esta acción no se puede deshacer.`
+    );
+
+    if (!confirmed) return;
+
+    dbRecords = dbRecords.filter(item => item.id !== id);
+
+    saveDatabase();
+    renderTable();
+
+    showToast("Factura eliminada.", "info");
+}
+
+
+/* =====================================================
+   CANCELAR EDICIÓN FACTURA
+===================================================== */
+
+btnCancel.addEventListener("click", resetForm);
+
+
+function resetForm() {
+
+    form.reset();
+    recordId.value = "";
+    selectedServices = [];
+
+    plateNumber.classList.remove("invalid");
+    clientPhone.classList.remove("invalid");
+
+    document.getElementById("form-title").textContent =
+        "Registrar Vehículo / Servicio";
+
+    btnSubmit.textContent = "Guardar Factura";
+    btnCancel.style.display = "none";
+
+    renderSelectedServices();
+    calculateTotals();
+}
+
+
+/* =====================================================
+   CRUD DE SERVICIOS
+===================================================== */
+
+/* -------- Renderizar tabla de servicios -------- */
+
+function getFilteredServices() {
+
+    if (!currentServiceSearchTerm) return serviceCatalog;
+
+    const term = currentServiceSearchTerm.toLowerCase();
+
+    return serviceCatalog.filter(s =>
+        s.name.toLowerCase().includes(term) ||
+        (s.description || "").toLowerCase().includes(term)
+    );
+}
+
+
+function renderServicesTable() {
+
+    servicesTableBody.innerHTML = "";
+
+    const services = getFilteredServices();
+
+    if (services.length === 0) {
+
+        const row = document.createElement("tr");
+        row.innerHTML =
+        `<td colspan="5" class="empty-row">
+        ${currentServiceSearchTerm ? "No se encontraron servicios." : "No hay servicios en el catálogo."}
+        </td>`;
+        servicesTableBody.appendChild(row);
+
+        updateSummary();
+        return;
+    }
+
+    services.forEach(service => {
+
+        const row = document.createElement("tr");
+
+        const statusBadge = service.active !== false
+            ? `<span class="badge badge-active">Activo</span>`
+            : `<span class="badge badge-inactive">Inactivo</span>`;
+
+        row.innerHTML = `
+
+        <td data-label="Servicio"><strong>${escapeHTML(service.name)}</strong></td>
+
+        <td data-label="Descripción">${escapeHTML(service.description || "—")}</td>
+
+        <td data-label="Precio" class="text-right"><strong>${formatMoney(service.price)}</strong></td>
+
+        <td data-label="Estado">${statusBadge}</td>
+
+        <td data-label="Acciones">
+            <div class="actions-cell">
+
+                <button class="btn-action btn-edit" data-saction="edit" data-sid="${escapeHTML(service.id)}">
+                    Editar
+                </button>
+
+                <button class="btn-action ${service.active !== false ? 'btn-delete' : 'btn-pdf'}"
+                        data-saction="toggle" data-sid="${escapeHTML(service.id)}">
+                    ${service.active !== false ? "Desactivar" : "Activar"}
+                </button>
+
+                <button class="btn-action btn-delete" data-saction="delete" data-sid="${escapeHTML(service.id)}">
+                    Eliminar
+                </button>
+
+            </div>
+        </td>
+
+        `;
+
+        servicesTableBody.appendChild(row);
+    });
+
+    updateSummary();
+}
+
+
+/* Delegación de eventos para la tabla de servicios */
+
+servicesTableBody.addEventListener("click", function (event) {
+
+    const button = event.target.closest("[data-saction]");
+    if (!button) return;
+
+    const action = button.dataset.saction;
+    const id = button.dataset.sid;
+
+    if (action === "edit") editService(id);
+    else if (action === "toggle") toggleService(id);
+    else if (action === "delete") deleteService(id);
+});
+
+
+/* -------- Resumen -------- */
+
+function updateSummary() {
+
+    const total = serviceCatalog.length;
+    const active = serviceCatalog.filter(s => s.active !== false).length;
+    const inactive = total - active;
+
+    const avg = total > 0
+        ? serviceCatalog.reduce((sum, s) => sum + safeNumber(s.price), 0) / total
+        : 0;
+
+    document.getElementById("summary-total").textContent = total;
+    document.getElementById("summary-active").textContent = active;
+    document.getElementById("summary-inactive").textContent = inactive;
+    document.getElementById("summary-avg").textContent = formatMoney(avg);
+}
+
+
+/* -------- Guardar servicio (crear o editar) -------- */
+
+serviceForm.addEventListener("submit", function (event) {
+
+    event.preventDefault();
+
+    const name = serviceName.value.trim();
+    const price = parseFloat(servicePrice.value);
+    const description = serviceDescription.value.trim();
+    const active = serviceActive.checked;
+
+    if (!name) {
+        showToast("El nombre del servicio es obligatorio.", "error");
+        return;
+    }
+
+    if (isNaN(price) || price < 0) {
+        showToast("El precio debe ser un número mayor o igual a 0.", "error");
+        return;
+    }
+
+    const isEditing = !!serviceId.value;
+
+    if (isEditing) {
+
+        const service = serviceCatalog.find(s => s.id === serviceId.value);
+        if (!service) return;
+
+        const duplicate = serviceCatalog.find(
+            s => s.id !== serviceId.value &&
+            s.name.toLowerCase() === name.toLowerCase()
+        );
+
+        if (duplicate) {
+            showToast("Ya existe un servicio con ese nombre.", "error");
+            return;
+        }
+
+        service.name = name;
+        service.price = round2(price);
+        service.description = description;
+        service.active = active;
+
+        showToast("Servicio actualizado correctamente.", "success");
+
+    } else {
+
+        const duplicate = serviceCatalog.find(
+            s => s.name.toLowerCase() === name.toLowerCase()
+        );
+
+        if (duplicate) {
+            showToast("Ya existe un servicio con ese nombre.", "error");
+            return;
+        }
+
+        serviceCatalog.push({
+            id: generateServiceId(),
+            name,
+            price: round2(price),
+            description,
+            active
+        });
+
+        showToast("Servicio agregado correctamente.", "success");
+    }
+
+    saveServices();
+    renderServicesTable();
+    renderServiceButtons();
+    resetServiceForm();
+});
+
+
+/* -------- Editar servicio -------- */
+
+function editService(id) {
+
+    const service = serviceCatalog.find(s => s.id === id);
+    if (!service) return;
+
+    serviceId.value = service.id;
+    serviceName.value = service.name;
+    servicePrice.value = service.price;
+    serviceDescription.value = service.description || "";
+    serviceActive.checked = service.active !== false;
+
+    serviceFormTitle.textContent = "Editar Servicio";
+    btnServiceSubmit.textContent = "Actualizar Servicio";
+    btnServiceCancel.style.display = "block";
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+
+/* -------- Activar / Desactivar -------- */
+
+function toggleService(id) {
+
+    const service = serviceCatalog.find(s => s.id === id);
+    if (!service) return;
+
+    service.active = !(service.active !== false);
+
+    saveServices();
+    renderServicesTable();
+    renderServiceButtons();
+
+    showToast(
+        service.active
+            ? `Servicio "${service.name}" activado.`
+            : `Servicio "${service.name}" desactivado.`,
+        "info"
+    );
+}
+
+
+/* -------- Eliminar servicio -------- */
+
+async function deleteService(id) {
+
+    const service = serviceCatalog.find(s => s.id === id);
+    if (!service) return;
+
+    const targetName = (service.name || "").toLowerCase().trim();
+
+    // Verificar si está en uso en facturas (por serviceId o por nombre normalizado)
+    const usedIn = dbRecords.filter(record =>
+        (record.services || []).some(s =>
+            s.serviceId === id ||
+            (s.name || "").toLowerCase().trim() === targetName
+        )
+    );
+
+    let message = `¿Deseas eliminar el servicio "${service.name}" del catálogo?`;
+
+    if (usedIn.length > 0) {
+        message += `\n\n⚠️ Este servicio aparece en ${usedIn.length} factura(s) existente(s). Las facturas antiguas conservarán el registro, pero ya no aparecerá como opción en nuevas facturas.`;
+    }
+
+    const confirmed = await showConfirm("Eliminar servicio", message);
+    if (!confirmed) return;
+
+    serviceCatalog = serviceCatalog.filter(s => s.id !== id);
+
+    saveServices();
+    renderServicesTable();
+    renderServiceButtons();
+
+    showToast("Servicio eliminado del catálogo.", "info");
+}
+
+
+/* -------- Cancelar edición servicio -------- */
+
+btnServiceCancel.addEventListener("click", resetServiceForm);
+
+
+function resetServiceForm() {
+
+    serviceForm.reset();
+    serviceId.value = "";
+    serviceActive.checked = true;
+
+    serviceFormTitle.textContent = "Agregar Nuevo Servicio";
+    btnServiceSubmit.textContent = "Agregar Servicio";
+    btnServiceCancel.style.display = "none";
+}
+
+
+/* -------- Buscador de servicios -------- */
+
+serviceSearchBox.addEventListener("input", function () {
+    currentServiceSearchTerm = this.value.trim();
+    renderServicesTable();
+});
+
+
+/* =====================================================
+   EXPORTAR / IMPORTAR / BORRAR TODO
+===================================================== */
+
+document.getElementById("btn-export").addEventListener("click", function () {
+
+    if (dbRecords.length === 0 && serviceCatalog.length === 0) {
+        showToast("No hay datos para exportar.", "info");
+        return;
+    }
+
+    const backup = {
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        facturas: dbRecords,
+        servicios: serviceCatalog
+    };
+
+    const dataStr = JSON.stringify(backup, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "taller_razer_backup_" + new Date().toISOString().slice(0, 10) + ".json";
+
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    URL.revokeObjectURL(url);
+
+    showToast("Respaldo exportado correctamente.", "success");
+});
+
+
+document.getElementById("btn-import").addEventListener("click", function () {
+    document.getElementById("file-import").click();
+});
+
+
+document.getElementById("file-import").addEventListener("change", function (event) {
+
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function (e) {
+
+        try {
+
+            const imported = JSON.parse(e.target.result);
+
+            let facturas = [];
+            let servicios = [];
+
+            if (imported && typeof imported === "object" && !Array.isArray(imported)) {
+                facturas = Array.isArray(imported.facturas) ? imported.facturas : [];
+                servicios = Array.isArray(imported.servicios) ? imported.servicios : [];
+            }
+            else if (Array.isArray(imported)) {
+                facturas = imported;
+            }
+            else {
+                throw new Error("El archivo no tiene un formato reconocido.");
+            }
+
+            const facturasValidas = facturas.filter(item =>
+                item &&
+                typeof item.id === "string" &&
+                typeof item.clientName === "string" &&
+                Array.isArray(item.services)
+            );
+
+            const serviciosValidos = servicios.filter(item =>
+                item &&
+                typeof item.name === "string" &&
+                typeof item.price === "number"
+            );
+
+            let addedFacturas = 0;
+            facturasValidas.forEach(item => {
+                if (!dbRecords.some(r => r.id === item.id)) {
+                    dbRecords.push(item);
+                    addedFacturas++;
+                }
+            });
+
+            let addedServicios = 0;
+            serviciosValidos.forEach(item => {
+                const exists = serviceCatalog.some(
+                    s => (item.id && s.id === item.id) ||
+                         s.name.toLowerCase() === item.name.toLowerCase()
+                );
+                if (!exists) {
+                    if (!item.id) {
+                        item.id = generateServiceId();
+                    }
+                    if (item.active === undefined) item.active = true;
+                    if (!item.description) item.description = "";
+                    item.price = round2(item.price);
+                    serviceCatalog.push(item);
+                    addedServicios++;
+                }
+            });
+
+            saveDatabase();
+            saveServices();
+
+            renderTable();
+            renderServicesTable();
+            renderServiceButtons();
+
+            showToast(
+                `Importación exitosa. ${addedFacturas} factura(s) y ${addedServicios} servicio(s) agregado(s).`,
+                "success"
+            );
+
+        } catch (error) {
+            showToast("Error al importar: " + error.message, "error");
+        }
+    };
+
+    reader.readAsText(file);
+
+    event.target.value = "";
+});
+
+
+document.getElementById("btn-clear-all").addEventListener("click", async function () {
+
+    if (dbRecords.length === 0) {
+        showToast("No hay facturas para eliminar.", "info");
+        return;
+    }
+
+    const confirmed = await showConfirm(
+        "Borrar todas las facturas",
+        `Se eliminarán las ${dbRecords.length} facturas registradas. El catálogo de servicios se conservará. Esta acción no se puede deshacer.`
+    );
+
+    if (!confirmed) return;
+
+    dbRecords = [];
+    localStorage.removeItem(STORAGE_KEY);
+
+    renderTable();
+
+    showToast("Todas las facturas han sido eliminadas.", "info");
+});
+
+
+/* =====================================================
+   GENERAR PDF
+===================================================== */
+
+/* Limpia texto para PDF (evita caracteres problemáticos) */
+function pdfSafe(text) {
+    return String(text == null ? "" : text)
+        .replace(/\r?\n/g, " ")
+        .replace(/[\u2018\u2019]/g, "'")
+        .replace(/[\u201C\u201D]/g, '"')
+        .replace(/\t/g, " ")
+        .trim();
+}
+
+/* Divide texto en líneas que quepan en un ancho dado (en mm) */
+function wrapText(doc, text, maxWidth) {
+    const words = String(text || "").split(/\s+/);
+    const lines = [];
+    let current = "";
+
+    words.forEach(word => {
+        const test = current ? current + " " + word : word;
+        if (doc.getTextWidth(test) > maxWidth && current) {
+            lines.push(current);
+            current = word;
+        } else {
+            current = test;
+        }
+    });
+
+    if (current) lines.push(current);
+    return lines.length ? lines : [""];
+}
+
+
+function generatePDF(id) {
+
+    const record = dbRecords.find(item => item.id === id);
+    if (!record) return;
+
+    if (typeof window.jspdf === "undefined") {
+        showToast("No se pudo cargar el generador PDF.", "error");
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    /* =========================================
+       ENCABEZADO
+    ========================================= */
+
+    doc.setFillColor(220, 38, 38);
+    doc.rect(0, 0, 210, 38, "F");
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(24);
+    doc.text("TALLER RAZER", 105, 15, { align: "center" });
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(
+        "Sistema de Control de Vehículos y Facturación",
+        105, 24, { align: "center" }
+    );
+
+    /* =========================================
+       INFORMACIÓN DE FACTURA
+    ========================================= */
+
+    doc.setTextColor(31, 41, 55);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(15);
+    doc.text("FACTURA", 20, 52);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+
+    doc.text("No. Factura: " + pdfSafe(record.id), 20, 61);
+    doc.text("Fecha: " + pdfSafe(record.date), 20, 68);
+    doc.text("Hora: " + pdfSafe(record.time), 20, 75);
+
+    /* =========================================
+       CLIENTE
+    ========================================= */
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("Datos del Cliente", 20, 90);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+
+    doc.text("Cliente: " + pdfSafe(record.clientName), 20, 99);
+    doc.text("Teléfono: " + pdfSafe(record.clientPhone), 20, 106);
+
+    /* =========================================
+       VEHÍCULO
+    ========================================= */
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("Datos del Vehículo", 20, 121);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+
+    doc.text("Modelo: " + pdfSafe(record.vehicleModel), 20, 130);
+    doc.text("Placa: " + pdfSafe(record.plateNumber), 20, 137);
+    doc.text("Año: " + pdfSafe(record.vehicleYear), 20, 144);
+
+    /* =========================================
+       TABLA DE SERVICIOS
+    ========================================= */
+
+    let startY = 158;
+
+    doc.setFillColor(31, 41, 55);
+    doc.rect(20, startY, 170, 10, "F");
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+
+    doc.text("Servicio / Descripción", 25, startY + 7);
+    doc.text("Cant.", 128, startY + 7, { align: "right" });
+    doc.text("Precio", 158, startY + 7, { align: "right" });
+    doc.text("Total", 188, startY + 7, { align: "right" });
+
+    /* =========================================
+       SERVICIOS (con descripción)
+    ========================================= */
+
+    doc.setTextColor(31, 41, 55);
+    doc.setFont("helvetica", "normal");
+
+    let currentY = startY + 18;
+
+    const rowHeight = 5;      // altura base de línea
+    const rowSpacing = 8;     // espacio tras cada servicio
+
+    (record.services || []).forEach(service => {
+
+        const nameLines = wrapText(doc, pdfSafe(service.name), 100);
+        const descLines = service.description
+            ? wrapText(doc, pdfSafe(service.description), 100)
+            : [];
+
+        const totalLines = nameLines.length + descLines.length;
+        const blockHeight = totalLines * rowHeight + 2;
+
+        // Salto de página si no cabe
+        if (currentY + blockHeight > 270) {
+            doc.addPage();
+            currentY = 25;
+        }
+
+        // Nombre (negrita)
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.setTextColor(31, 41, 55);
+
+        nameLines.forEach(line => {
+            doc.text(line, 25, currentY);
+            currentY += rowHeight;
+        });
+
+        // Descripción (gris, más pequeña)
+        if (descLines.length) {
+            doc.setFont("helvetica", "italic");
+            doc.setFontSize(8);
+            doc.setTextColor(120, 120, 120);
+
+            descLines.forEach(line => {
+                doc.text(line, 25, currentY);
+                currentY += rowHeight;
+            });
+
+            doc.setTextColor(31, 41, 55);
+        }
+
+        // Cantidad, precio y total alineados a la derecha
+        // (se colocan a la altura del nombre, en la primera línea)
+        const firstLineY = currentY - blockHeight + 3;
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+
+        doc.text(
+            String(service.quantity),
+            128, firstLineY, { align: "right" }
+        );
+        doc.text(
+            formatMoney(service.price),
+            158, firstLineY, { align: "right" }
+        );
+        doc.text(
+            formatMoney(service.price * service.quantity),
+            188, firstLineY, { align: "right" }
+        );
+
+        // Línea separadora tenue
+        doc.setDrawColor(230, 230, 230);
+        doc.line(20, currentY + 1, 190, currentY + 1);
+
+        currentY += rowSpacing;
+    });
+
+    /* =========================================
+       TOTALES
+    ========================================= */
+
+    currentY += 4;
+    doc.setDrawColor(31, 41, 55);
+    doc.line(20, currentY, 190, currentY);
+    currentY += 10;
+
+    doc.setFontSize(10);
+
+    doc.text("Subtotal:", 125, currentY);
+    doc.text(formatMoney(record.subtotal), 188, currentY, { align: "right" });
+
+    currentY += 8;
+
+    doc.text("ITBIS 18%:", 125, currentY);
+    doc.text(formatMoney(record.tax), 188, currentY, { align: "right" });
+
+    currentY += 10;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+
+    doc.text("TOTAL:", 125, currentY);
+    doc.text(formatMoney(record.total), 188, currentY, { align: "right" });
+
+    /* =========================================
+       PIE
+    ========================================= */
+
+    currentY += 25;
+
+    doc.setDrawColor(220, 38, 38);
+    doc.line(20, currentY, 190, currentY);
+
+    currentY += 10;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(75, 85, 99);
+
+    doc.text("Gracias por confiar en Taller Razer.", 105, currentY, { align: "center" });
+
+    currentY += 7;
+
+    doc.text("Factura generada electrónicamente.", 105, currentY, { align: "center" });
+
+    /* =========================================
+       GUARDAR PDF
+    ========================================= */
+
+    doc.save("Factura_" + record.id + "_Taller_Razer.pdf");
+
+    showToast("PDF generado correctamente.", "success");
+}
+
+
+/* =====================================================
+   INICIAR SISTEMA
+===================================================== */
+
+renderServiceButtons();
+renderSelectedServices();
+renderTable();
+
+renderServicesTable();
+
+calculateTotals();
+
+</script>
+
+</body>
+
+</html>
